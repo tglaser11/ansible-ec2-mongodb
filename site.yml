@@ -1,0 +1,13 @@
+---
+- hosts: all
+  gather_facts: False
+  sudo: yes
+  
+
+- hosts: tag_class_mongodb  
+  sudo: yes  
+  
+  roles:  
+    - mongodb  
+     
+

@@ -1,0 +1,68 @@
+---  
+- hosts: localhost  
+  connection: local  
+  gather_facts: no    
+  vars:  
+    #your region  
+    region: us-west-1
+    keyname: tgkey1
+    #your ip address
+    allowed_ip: 0.0.0.0/0
+    instance_type: t2.micro     
+    image: ami-b73d6cd7
+    name_tag: mongodb-1
+  tasks:  
+    - name: create key pair  
+      tags: keypair  
+      ec2_key:  
+        region: "{{ region }}"  
+        name: "{{ keyname }}"      
+      register: mykey  
+
+    - name: write the private key to file
+      copy: content="{{ mykey.key.private_key }}" dest="~/.ssh/{{ keyname }}.pem" mode=0600
+      when: mykey.changed
+
+    - name: create security group  
+      tags: sg
+      ec2_group:    
+        region: "{{ region }}"
+        #your security group name  
+        name: sg_mongodb    
+        description: security group for webserver host
+        rules:
+          # allow ssh access from your ip address  
+          - proto: tcp  
+            from_port: 22  
+            to_port: 22  
+            cidr_ip: "{{ allowed_ip }}"   
+          # allow 8888 access from anywhere  
+          - proto: tcp  
+            from_port: 27017    
+            to_port: 27017    
+            cidr_ip: 0.0.0.0/0
+        rules_egress:  
+          - proto: all  
+            cidr_ip: 0.0.0.0/0    
+
+    - name: launch ec2 instance  
+      tags: ec2
+      local_action:  
+        module: ec2  
+        region: "{{ region }}"  
+        key_name: "{{ keyname }}"
+        instance_type: "{{ instance_type }}"    
+        image: "{{ image }}"  
+        wait: yes    
+        group: sg_mongodb  
+        instance_tags:  
+          Name: "{{name_tag}}"  
+          class: mongodb
+        count_tag:
+          Name: "{{name_tag}}"
+        exact_count: 1
+      register: ec2    
+
+
+
+

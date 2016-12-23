@@ -1,0 +1,23 @@
+---
+- name: add mongodb repo
+  template: src=mongodb-org-3.4.repo dest=/etc/yum.repos.d/mongodb-org-3.4.repo
+
+- name: install mongodb
+  yum:
+    name: mongodb-org
+    state: present
+
+- name: add mongodb config
+  template: src=mongod.conf dest=/etc/mongod.conf
+
+- name: start mongodb
+  service: 
+    name: mongod
+    state: started
+
+- name: start at system restart
+  service:
+    name: mongod
+    enabled: yes
+
+
